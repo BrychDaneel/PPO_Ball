@@ -53,7 +53,7 @@ public class DrawThread extends Thread implements SensorEventListener{
     private float xdpm, ydpm;
     private float radius;
     float scale;
-    Sensor gyroscope;
+    Sensor accelerometr;
 
     public void setRun(boolean run){
         this.run = run;
@@ -68,8 +68,8 @@ public class DrawThread extends Thread implements SensorEventListener{
 
         SensorManager sensorManager = (SensorManager) context.
                 getSystemService(Context.SENSOR_SERVICE);
-        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
-        sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
+        accelerometr = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(this, accelerometr, SensorManager.SENSOR_DELAY_GAME);
 
         soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
         sound = soundPool.load(context, R.raw.caughtball, 0);

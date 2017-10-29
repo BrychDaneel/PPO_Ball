@@ -11,6 +11,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.SurfaceHolder;
@@ -26,6 +29,8 @@ public class DrawThread extends Thread implements SensorEventListener{
     public static float SPEED_FRICTION = 0.3f;
     public static float ANGLE_FRICTION = 0.3f;
     public static float ELASTIC = 0.8f;
+    public static float KVOLUME = 100000f;
+    public static float MIN_VALUE = 0.003f;
     public static final float MASS = 0.01f;
     private final float LOGICAL_RADIUS = 0.3f;
     public static final float INC2METR = 0.025f;
@@ -33,6 +38,8 @@ public class DrawThread extends Thread implements SensorEventListener{
     private SurfaceHolder surfaceHolder;
     private Matrix matrix;
     private Bitmap ball;
+    private SoundPool soundPool;
+    private int sound;
 
     private boolean run;
 
@@ -56,26 +63,29 @@ public class DrawThread extends Thread implements SensorEventListener{
         super();
         matrix = new Matrix();
         this.surfaceHolder = surfaceHolder;
-
-        width = surfaceHolder.getSurfaceFrame().width();
-        height = surfaceHolder.getSurfaceFrame().height();
-
         ball = BitmapFactory.decodeResource(context.getResources(), R.drawable.ball);
 
-        float pWidth = ball.getWidth();
-        float pHeight = ball.getHeight();
-
-        float scaleX = LOGICAL_RADIUS*width/pWidth;
-        float scaleY = LOGICAL_RADIUS*pHeight/height;
-        scale = Math.min(scaleX, scaleY);
-        matrix.setScale(scale, scale);
-
-        radius = scale * pWidth;
 
         SensorManager sensorManager = (SensorManager) context.
                 getSystemService(Context.SENSOR_SERVICE);
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
+
+        soundPool = new SoundPool(10, AudioManager.STREAM_MUSIC, 0);
+        sound = soundPool.load(context, R.raw.caughtball, 0);
+
+        width = surfaceHolder.getSurfaceFrame().width();
+        height = surfaceHolder.getSurfaceFrame().height();
+
+        float pWidth = ball.getWidth();
+        float pHeight = ball.getHeight();
+
+        float scaleX = LOGICAL_RADIUS*width/pWidth;
+        float scaleY = LOGICAL_RADIUS*height/pHeight;
+        scale = Math.min(scaleX, scaleY);
+        matrix.setScale(scale, scale);
+
+        radius = scale * pWidth;
 
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         xdpm = metrics.xdpi / INC2METR;
@@ -89,6 +99,12 @@ public class DrawThread extends Thread implements SensorEventListener{
         return System.nanoTime() / 1_000_000;
     }
 
+    private void playSound(float dE){
+        float level = dE * KVOLUME;
+        if (level > MIN_VALUE)
+            soundPool.play(sound, level, level, 0, 0, 1);
+    }
+
     private void redraw(Canvas canvas, float dtime){
         vx += gx * MASS * dtime * xdpm;
         vy += gy * MASS * dtime * ydpm;
@@ -96,21 +112,25 @@ public class DrawThread extends Thread implements SensorEventListener{
         y += vy * dtime;
         if (x > maxX) {
             x = maxX;
+            playSound((float)Math.pow(vx/xdpm*(1-ELASTIC), 2)*MASS);
             vx = - vx * ELASTIC;
-            rotation = - ROTAR * dtime * vy / ydpm;
+            rotation = - ROTAR * dtime * vy/ydpm;
         }
         if (y > maxY){
             y = maxY;
+            playSound((float)Math.pow(vy/ydpm*(1-ELASTIC), 2)*MASS);
             vy = - vy * ELASTIC;
             rotation = - ROTAR * dtime *  vx / xdpm;
         }
         if (x < 0) {
             x = 0;
+            playSound((float)Math.pow(vx/xdpm*(1-ELASTIC), 2)*MASS);
             vx = - vx * ELASTIC;
             rotation = ROTAR * dtime * vy / ydpm;
         }
         if (y < 0){
             y = 0;
+            playSound((float)Math.pow(vy/ydpm*(1-ELASTIC), 2)*MASS);
             vy = - vy * ELASTIC;
             rotation = ROTAR * dtime * vx / xdpm;
         }
@@ -141,6 +161,11 @@ public class DrawThread extends Thread implements SensorEventListener{
                     continue;
                 redraw(canvas, dtime / 1000f);
                 surfaceHolder.unlockCanvasAndPost(canvas);
+            } else{
+                try {
+                    sleep(1000 / MAX_FPS / 3);
+                } catch (InterruptedException ignored){}
+
             }
         }
     }

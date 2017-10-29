@@ -36,8 +36,8 @@ public class DrawThread extends Thread implements SensorEventListener{
     public static final float INC2METR = 0.025f;
 
     private SurfaceHolder surfaceHolder;
-    private Matrix matrix;
-    private Bitmap ball;
+    private Matrix bgMatrix;
+    private Bitmap ball, background;
     private SoundPool soundPool;
     private int sound;
 
@@ -61,9 +61,9 @@ public class DrawThread extends Thread implements SensorEventListener{
 
     public DrawThread(Context context, SurfaceHolder surfaceHolder){
         super();
-        matrix = new Matrix();
         this.surfaceHolder = surfaceHolder;
         ball = BitmapFactory.decodeResource(context.getResources(), R.drawable.ball);
+        background = BitmapFactory.decodeResource(context.getResources(), R.drawable.background);
 
 
         SensorManager sensorManager = (SensorManager) context.
@@ -83,7 +83,6 @@ public class DrawThread extends Thread implements SensorEventListener{
         float scaleX = LOGICAL_RADIUS*width/pWidth;
         float scaleY = LOGICAL_RADIUS*height/pHeight;
         scale = Math.min(scaleX, scaleY);
-        matrix.setScale(scale, scale);
 
         radius = scale * pWidth;
 
@@ -93,6 +92,9 @@ public class DrawThread extends Thread implements SensorEventListener{
 
         maxX = width - radius;
         maxY = height - radius;
+
+        bgMatrix = new Matrix();
+        bgMatrix.setScale(width / background.getWidth(), height / background.getHeight());
     }
 
     public long getTime() {
@@ -140,7 +142,10 @@ public class DrawThread extends Thread implements SensorEventListener{
         rotation *= (1 - ANGLE_FRICTION * dtime);
 
         angle += dtime * rotation;
-        canvas.drawColor(Color.BLACK);
+
+        canvas.drawBitmap(background, bgMatrix, null);
+
+        Matrix matrix = new Matrix();
         matrix.setScale(scale, scale);
         matrix.postRotate(angle / (float)Math.PI * 180, radius / 2, radius / 2);
         matrix.postTranslate(x, y);

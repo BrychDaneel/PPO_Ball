@@ -26,7 +26,6 @@ public class BallSurfaceView extends SurfaceView implements SurfaceHolder.Callba
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
     }
 
     @Override
@@ -46,4 +45,5 @@ public class BallSurfaceView extends SurfaceView implements SurfaceHolder.Callba
         this.context = context;
         getHolder().addCallback(this);
     }
+
 }

@@ -31,6 +31,7 @@ public class DrawThread extends Thread implements SensorEventListener{
     public static float ELASTIC = 0.8f;
     public static float KVOLUME = 100000f;
     public static float MIN_VALUE = 0.003f;
+    public static final float RESIST = 0.99f;
     public static final float MASS = 0.01f;
     private final float LOGICAL_RADIUS = 0.3f;
     public static final float INC2METR = 0.025f;
@@ -108,8 +109,8 @@ public class DrawThread extends Thread implements SensorEventListener{
     }
 
     private void redraw(Canvas canvas, float dtime){
-        vx += gx * MASS * dtime * xdpm;
-        vy += gy * MASS * dtime * ydpm;
+        vx += gx * (1 - RESIST) * dtime * xdpm;
+        vy += gy * (1 - RESIST) * dtime * ydpm;
         x -= vx * dtime;
         y += vy * dtime;
         if (x > maxX) {
